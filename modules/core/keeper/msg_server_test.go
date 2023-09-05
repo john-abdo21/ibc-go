@@ -1,10 +1,10 @@
 package keeper_test
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	upgradetypes "cosmossdk.io/x/upgrade/types"
 
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	connectiontypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/v7/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
@@ -162,13 +162,13 @@ func (suite *KeeperTestSuite) TestHandleRecvPacket() {
 
 			msg := channeltypes.NewMsgRecvPacket(packet, proof, proofHeight, suite.chainB.SenderAccount.GetAddress().String())
 
-			_, err := keeper.Keeper.RecvPacket(*suite.chainB.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainB.GetContext()), msg)
+			_, err := keeper.Keeper.RecvPacket(*suite.chainB.App.GetIBCKeeper(), suite.chainB.GetContext(), msg)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
 
 				// replay should not fail since it will be treated as a no-op
-				_, err := keeper.Keeper.RecvPacket(*suite.chainB.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainB.GetContext()), msg)
+				_, err := keeper.Keeper.RecvPacket(*suite.chainB.App.GetIBCKeeper(), suite.chainB.GetContext(), msg)
 				suite.Require().NoError(err)
 
 				// check that callback state was handled correctly
@@ -322,7 +322,7 @@ func (suite *KeeperTestSuite) TestHandleAcknowledgePacket() {
 
 			msg := channeltypes.NewMsgAcknowledgement(packet, ibcmock.MockAcknowledgement.Acknowledgement(), proof, proofHeight, suite.chainA.SenderAccount.GetAddress().String())
 
-			_, err := keeper.Keeper.Acknowledgement(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+			_, err := keeper.Keeper.Acknowledgement(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
@@ -332,7 +332,7 @@ func (suite *KeeperTestSuite) TestHandleAcknowledgePacket() {
 				suite.Require().False(has)
 
 				// replay should not error as it is treated as a no-op
-				_, err := keeper.Keeper.Acknowledgement(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+				_, err := keeper.Keeper.Acknowledgement(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 				suite.Require().NoError(err)
 			} else {
 				suite.Require().Error(err)
@@ -467,13 +467,13 @@ func (suite *KeeperTestSuite) TestHandleTimeoutPacket() {
 
 			msg := channeltypes.NewMsgTimeout(packet, 1, proof, proofHeight, suite.chainA.SenderAccount.GetAddress().String())
 
-			_, err := keeper.Keeper.Timeout(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+			_, err := keeper.Keeper.Timeout(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
 
 				// replay should not return an error as it is treated as a no-op
-				_, err := keeper.Keeper.Timeout(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+				_, err := keeper.Keeper.Timeout(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 				suite.Require().NoError(err)
 
 				// verify packet commitment was deleted on source chain
@@ -635,13 +635,13 @@ func (suite *KeeperTestSuite) TestHandleTimeoutOnClosePacket() {
 
 			msg := channeltypes.NewMsgTimeoutOnClose(packet, 1, proof, proofClosed, proofHeight, suite.chainA.SenderAccount.GetAddress().String())
 
-			_, err := keeper.Keeper.TimeoutOnClose(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+			_, err := keeper.Keeper.TimeoutOnClose(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 
 			if tc.expPass {
 				suite.Require().NoError(err)
 
 				// replay should not return an error as it will be treated as a no-op
-				_, err := keeper.Keeper.TimeoutOnClose(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+				_, err := keeper.Keeper.TimeoutOnClose(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 				suite.Require().NoError(err)
 
 				// verify packet commitment was deleted on source chain
@@ -761,7 +761,7 @@ func (suite *KeeperTestSuite) TestUpgradeClient() {
 
 		tc.setup()
 
-		_, err = keeper.Keeper.UpgradeClient(*suite.chainA.App.GetIBCKeeper(), sdk.WrapSDKContext(suite.chainA.GetContext()), msg)
+		_, err = keeper.Keeper.UpgradeClient(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), msg)
 
 		if tc.expPass {
 			suite.Require().NoError(err, "upgrade handler failed on valid case: %s", tc.name)
@@ -772,5 +772,107 @@ func (suite *KeeperTestSuite) TestUpgradeClient() {
 		} else {
 			suite.Require().Error(err, "upgrade handler passed on invalid case: %s", tc.name)
 		}
+	}
+}
+
+// TestUpdateClientParams tests the UpdateClientParams rpc handler
+func (suite *KeeperTestSuite) TestUpdateClientParams() {
+	signer := suite.chainA.App.GetIBCKeeper().GetAuthority()
+	testCases := []struct {
+		name    string
+		msg     *clienttypes.MsgUpdateParams
+		expPass bool
+	}{
+		{
+			"success: valid signer and default params",
+			clienttypes.NewMsgUpdateParams(signer, clienttypes.DefaultParams()),
+			true,
+		},
+		{
+			"failure: malformed signer address",
+			clienttypes.NewMsgUpdateParams(ibctesting.InvalidID, clienttypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: empty signer address",
+			clienttypes.NewMsgUpdateParams("", clienttypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: whitespace signer address",
+			clienttypes.NewMsgUpdateParams("    ", clienttypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: unauthorized signer address",
+			clienttypes.NewMsgUpdateParams(ibctesting.TestAccAddress, clienttypes.DefaultParams()),
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			_, err := keeper.Keeper.UpdateClientParams(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), tc.msg)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				p := suite.chainA.App.GetIBCKeeper().ClientKeeper.GetParams(suite.chainA.GetContext())
+				suite.Require().Equal(tc.msg.Params, p)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
+	}
+}
+
+// TestUpdateConnectionParams tests the UpdateConnectionParams rpc handler
+func (suite *KeeperTestSuite) TestUpdateConnectionParams() {
+	signer := suite.chainA.App.GetIBCKeeper().GetAuthority()
+	testCases := []struct {
+		name    string
+		msg     *connectiontypes.MsgUpdateParams
+		expPass bool
+	}{
+		{
+			"success: valid signer and default params",
+			connectiontypes.NewMsgUpdateParams(signer, connectiontypes.DefaultParams()),
+			true,
+		},
+		{
+			"failure: malformed signer address",
+			connectiontypes.NewMsgUpdateParams(ibctesting.InvalidID, connectiontypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: empty signer address",
+			connectiontypes.NewMsgUpdateParams("", connectiontypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: whitespace signer address",
+			connectiontypes.NewMsgUpdateParams("    ", connectiontypes.DefaultParams()),
+			false,
+		},
+		{
+			"failure: unauthorized signer address",
+			connectiontypes.NewMsgUpdateParams(ibctesting.TestAccAddress, connectiontypes.DefaultParams()),
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			_, err := keeper.Keeper.UpdateConnectionParams(*suite.chainA.App.GetIBCKeeper(), suite.chainA.GetContext(), tc.msg)
+			if tc.expPass {
+				suite.Require().NoError(err)
+				p := suite.chainA.App.GetIBCKeeper().ConnectionKeeper.GetParams(suite.chainA.GetContext())
+				suite.Require().Equal(tc.msg.Params, p)
+			} else {
+				suite.Require().Error(err)
+			}
+		})
 	}
 }

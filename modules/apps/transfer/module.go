@@ -5,15 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
+
+	"cosmossdk.io/core/appmodule"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/cosmos/ibc-go/v7/modules/apps/transfer/client/cli"
 	"github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
@@ -23,9 +27,10 @@ import (
 )
 
 var (
-	_ module.AppModule      = AppModule{}
-	_ module.AppModuleBasic = AppModuleBasic{}
-	_ porttypes.IBCModule   = IBCModule{}
+	_ module.AppModule      = (*AppModule)(nil)
+	_ module.AppModuleBasic = (*AppModuleBasic)(nil)
+	_ appmodule.AppModule   = (*AppModule)(nil)
+	_ porttypes.IBCModule   = (*IBCModule)(nil)
 )
 
 // AppModuleBasic is the IBC Transfer AppModuleBasic
@@ -35,6 +40,12 @@ type AppModuleBasic struct{}
 func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (AppModule) IsAppModule() {}
 
 // RegisterLegacyAminoCodec implements AppModuleBasic interface
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
@@ -94,8 +105,8 @@ func NewAppModule(k keeper.Keeper) AppModule {
 }
 
 // RegisterInvariants implements the AppModule interface
-func (AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
-	// TODO
+func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	keeper.RegisterInvariants(ir, &am.keeper)
 }
 
 // RegisterServices registers module services.
@@ -105,7 +116,15 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 
 	m := keeper.NewMigrator(am.keeper)
 	if err := cfg.RegisterMigration(types.ModuleName, 1, m.MigrateTraces); err != nil {
-		panic(fmt.Sprintf("failed to migrate transfer app from version 1 to 2: %v", err))
+		panic(fmt.Sprintf("failed to migrate transfer app from version 1 to 2 (denom trace format migration): %v", err))
+	}
+
+	if err := cfg.RegisterMigration(types.ModuleName, 2, m.MigrateTotalEscrowForDenom); err != nil {
+		panic(fmt.Sprintf("failed to migrate transfer app from version 2 to 3 (total escrow entry migration): %v", err))
+	}
+
+	if err := cfg.RegisterMigration(types.ModuleName, 3, m.MigrateParams); err != nil {
+		panic(fmt.Sprintf("failed to migrate transfer app version 3 to 4 (self-managed params migration): %v", err))
 	}
 }
 
@@ -125,17 +144,8 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	return cdc.MustMarshalJSON(gs)
 }
 
-// ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
-
-// BeginBlock implements the AppModule interface
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-}
-
-// EndBlock implements the AppModule interface
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
-}
+// ConsensusVersion implements AppModule/ConsensusVersion defining the current version of transfer.
+func (AppModule) ConsensusVersion() uint64 { return 4 }
 
 // AppModuleSimulation functions
 
@@ -145,11 +155,11 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 }
 
 // RegisterStoreDecoder registers a decoder for transfer module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simulation.NewDecodeStore(am.keeper)
 }
 
 // WeightedOperations returns the all the transfer module operations with their respective weights.
-func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
+func (AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }

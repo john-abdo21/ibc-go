@@ -4,10 +4,11 @@ import (
 	"strings"
 
 	errorsmod "cosmossdk.io/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ibcerrors "github.com/cosmos/ibc-go/v7/internal/errors"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	ibcerrors "github.com/cosmos/ibc-go/v7/modules/core/errors"
 )
 
 // NewPacketFee creates and returns a new PacketFee struct including the incentivization fees, refund address and relayers
@@ -31,11 +32,7 @@ func (p PacketFee) Validate() error {
 		return ErrRelayersNotEmpty
 	}
 
-	if err := p.Fee.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.Fee.Validate()
 }
 
 // NewPacketFees creates and returns a new PacketFees struct including a list of type PacketFee

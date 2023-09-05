@@ -5,15 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
+
+	"cosmossdk.io/core/appmodule"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	ibcclient "github.com/cosmos/ibc-go/v7/modules/core/02-client"
 	clientkeeper "github.com/cosmos/ibc-go/v7/modules/core/02-client/keeper"
@@ -29,20 +33,25 @@ import (
 )
 
 var (
-	_ module.AppModule           = AppModule{}
-	_ module.AppModuleBasic      = AppModuleBasic{}
-	_ module.AppModuleSimulation = AppModule{}
+	_ module.AppModule           = (*AppModule)(nil)
+	_ module.AppModuleBasic      = (*AppModuleBasic)(nil)
+	_ module.AppModuleSimulation = (*AppModule)(nil)
+	_ appmodule.AppModule        = (*AppModule)(nil)
 )
 
 // AppModuleBasic defines the basic application module used by the ibc module.
 type AppModuleBasic struct{}
 
-var _ module.AppModuleBasic = AppModuleBasic{}
-
 // Name returns the ibc module's name.
 func (AppModuleBasic) Name() string {
 	return exported.ModuleName
 }
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (AppModule) IsAppModule() {}
 
 // RegisterLegacyAminoCodec does nothing. IBC does not support amino.
 func (AppModuleBasic) RegisterLegacyAminoCodec(*codec.LegacyAmino) {}
@@ -113,7 +122,7 @@ func (AppModule) Name() string {
 }
 
 // RegisterInvariants registers the ibc module invariants.
-func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+func (AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 	// TODO:
 }
 
@@ -135,11 +144,17 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 			return err
 		}
 
-		if err := clientMigrator.Migrate3to4(ctx); err != nil {
+		return clientMigrator.Migrate3to4(ctx)
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := cfg.RegisterMigration(exported.ModuleName, 4, func(ctx sdk.Context) error {
+		if err := clientMigrator.MigrateParams(ctx); err != nil {
 			return err
 		}
 
-		return nil
+		return connectionMigrator.MigrateParams(ctx)
 	}); err != nil {
 		panic(err)
 	}
@@ -164,17 +179,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 4 }
+func (AppModule) ConsensusVersion() uint64 { return 5 }
 
 // BeginBlock returns the begin blocker for the ibc module.
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+func (am AppModule) BeginBlock(ctx sdk.Context) {
 	ibcclient.BeginBlocker(ctx, am.keeper.ClientKeeper)
-}
-
-// EndBlock returns the end blocker for the ibc module. It returns no validator
-// updates.
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
 }
 
 // AppModuleSimulation functions
@@ -185,11 +194,11 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 }
 
 // RegisterStoreDecoder registers a decoder for ibc module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[exported.StoreKey] = simulation.NewDecodeStore(*am.keeper)
 }
 
 // WeightedOperations returns the all the ibc module operations with their respective weights.
-func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
+func (AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }

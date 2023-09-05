@@ -6,6 +6,7 @@ package types
 import (
 	context "context"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -32,7 +33,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // MsgRegisterInterchainAccount defines the payload for Msg/RegisterAccount
 type MsgRegisterInterchainAccount struct {
 	Owner        string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	ConnectionId string `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty" yaml:"connection_id"`
+	ConnectionId string `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	Version      string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -71,8 +72,8 @@ var xxx_messageInfo_MsgRegisterInterchainAccount proto.InternalMessageInfo
 
 // MsgRegisterInterchainAccountResponse defines the response for Msg/RegisterAccount
 type MsgRegisterInterchainAccountResponse struct {
-	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty" yaml:"channel_id"`
-	PortId    string `protobuf:"bytes,2,opt,name=port_id,json=portId,proto3" json:"port_id,omitempty" yaml:"port_id"`
+	ChannelId string `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	PortId    string `protobuf:"bytes,2,opt,name=port_id,json=portId,proto3" json:"port_id,omitempty"`
 }
 
 func (m *MsgRegisterInterchainAccountResponse) Reset()         { *m = MsgRegisterInterchainAccountResponse{} }
@@ -108,28 +109,14 @@ func (m *MsgRegisterInterchainAccountResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgRegisterInterchainAccountResponse proto.InternalMessageInfo
 
-func (m *MsgRegisterInterchainAccountResponse) GetChannelId() string {
-	if m != nil {
-		return m.ChannelId
-	}
-	return ""
-}
-
-func (m *MsgRegisterInterchainAccountResponse) GetPortId() string {
-	if m != nil {
-		return m.PortId
-	}
-	return ""
-}
-
 // MsgSendTx defines the payload for Msg/SendTx
 type MsgSendTx struct {
 	Owner        string                            `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	ConnectionId string                            `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty" yaml:"connection_id"`
-	PacketData   types.InterchainAccountPacketData `protobuf:"bytes,3,opt,name=packet_data,json=packetData,proto3" json:"packet_data" yaml:"packet_data"`
+	ConnectionId string                            `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	PacketData   types.InterchainAccountPacketData `protobuf:"bytes,3,opt,name=packet_data,json=packetData,proto3" json:"packet_data"`
 	// Relative timeout timestamp provided will be added to the current block time during transaction execution.
 	// The timeout timestamp must be non-zero.
-	RelativeTimeout uint64 `protobuf:"varint,4,opt,name=relative_timeout,json=relativeTimeout,proto3" json:"relative_timeout,omitempty" yaml:"relative_timeout"`
+	RelativeTimeout uint64 `protobuf:"varint,4,opt,name=relative_timeout,json=relativeTimeout,proto3" json:"relative_timeout,omitempty"`
 }
 
 func (m *MsgSendTx) Reset()         { *m = MsgSendTx{} }
@@ -203,18 +190,93 @@ func (m *MsgSendTxResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgSendTxResponse proto.InternalMessageInfo
 
-func (m *MsgSendTxResponse) GetSequence() uint64 {
-	if m != nil {
-		return m.Sequence
-	}
-	return 0
+// MsgUpdateParams defines the payload for Msg/UpdateParams
+type MsgUpdateParams struct {
+	// signer address (it may be the the address that controls the module, which defaults to x/gov unless overwritten).
+	Signer string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	// params defines the 27-interchain-accounts/controller parameters to update.
+	//
+	// NOTE: All parameters must be supplied.
+	Params Params `protobuf:"bytes,2,opt,name=params,proto3" json:"params"`
 }
+
+func (m *MsgUpdateParams) Reset()         { *m = MsgUpdateParams{} }
+func (m *MsgUpdateParams) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateParams) ProtoMessage()    {}
+func (*MsgUpdateParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7def041328c84a30, []int{4}
+}
+func (m *MsgUpdateParams) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateParams.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateParams.Merge(m, src)
+}
+func (m *MsgUpdateParams) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateParams proto.InternalMessageInfo
+
+// MsgUpdateParamsResponse defines the response for Msg/UpdateParams
+type MsgUpdateParamsResponse struct {
+}
+
+func (m *MsgUpdateParamsResponse) Reset()         { *m = MsgUpdateParamsResponse{} }
+func (m *MsgUpdateParamsResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateParamsResponse) ProtoMessage()    {}
+func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7def041328c84a30, []int{5}
+}
+func (m *MsgUpdateParamsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateParamsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateParamsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateParamsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateParamsResponse.Merge(m, src)
+}
+func (m *MsgUpdateParamsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateParamsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*MsgRegisterInterchainAccount)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgRegisterInterchainAccount")
 	proto.RegisterType((*MsgRegisterInterchainAccountResponse)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgRegisterInterchainAccountResponse")
 	proto.RegisterType((*MsgSendTx)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgSendTx")
 	proto.RegisterType((*MsgSendTxResponse)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgSendTxResponse")
+	proto.RegisterType((*MsgUpdateParams)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgUpdateParams")
+	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "ibc.applications.interchain_accounts.controller.v1.MsgUpdateParamsResponse")
 }
 
 func init() {
@@ -222,43 +284,47 @@ func init() {
 }
 
 var fileDescriptor_7def041328c84a30 = []byte{
-	// 570 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x94, 0xbf, 0x6f, 0xd3, 0x40,
-	0x14, 0xc7, 0xed, 0x34, 0xa4, 0xcd, 0x95, 0x5f, 0xb5, 0x82, 0x30, 0x06, 0xd9, 0x95, 0xc5, 0x50,
-	0x09, 0xc5, 0xa7, 0x84, 0x4a, 0x95, 0x8a, 0x3a, 0x10, 0x15, 0xa4, 0x0c, 0x91, 0x22, 0xd3, 0x01,
-	0xb1, 0x44, 0x97, 0xf3, 0xc9, 0x39, 0x70, 0xee, 0x8c, 0xef, 0x62, 0xda, 0x91, 0x0d, 0x16, 0xc4,
-	0xc6, 0xda, 0xbf, 0x82, 0x7f, 0x81, 0x8e, 0x1d, 0x99, 0xac, 0x2a, 0x59, 0x98, 0xf3, 0x17, 0x20,
-	0xdb, 0x89, 0x53, 0xa0, 0x54, 0xe5, 0x47, 0x37, 0xbf, 0x7b, 0xf7, 0x79, 0xef, 0x7b, 0xef, 0x3d,
-	0x3f, 0xf0, 0x88, 0xf6, 0x31, 0x44, 0x61, 0x18, 0x50, 0x8c, 0x24, 0xe5, 0x4c, 0x40, 0xca, 0x24,
-	0x89, 0xf0, 0x00, 0x51, 0xd6, 0x43, 0x18, 0xf3, 0x11, 0x93, 0x02, 0x62, 0xce, 0x64, 0xc4, 0x83,
-	0x80, 0x44, 0x30, 0x6e, 0x40, 0xb9, 0xef, 0x84, 0x11, 0x97, 0x5c, 0x6b, 0xd2, 0x3e, 0x76, 0x4e,
-	0xc3, 0xce, 0x19, 0xb0, 0xb3, 0x80, 0x9d, 0xb8, 0x61, 0xd4, 0x7c, 0xee, 0xf3, 0x0c, 0x87, 0xe9,
-	0x57, 0x1e, 0xc9, 0xd8, 0xbc, 0x90, 0x8c, 0xb8, 0x01, 0x43, 0x84, 0x5f, 0x11, 0x99, 0x53, 0xf6,
-	0x27, 0x15, 0xdc, 0xeb, 0x08, 0xdf, 0x25, 0x3e, 0x15, 0x92, 0x44, 0xed, 0x02, 0x79, 0x9c, 0x13,
-	0x5a, 0x0d, 0x5c, 0xe1, 0x6f, 0x18, 0x89, 0x74, 0x75, 0x5d, 0xdd, 0xa8, 0xba, 0xb9, 0xa1, 0xed,
-	0x80, 0x6b, 0x98, 0x33, 0x46, 0x70, 0x9a, 0xa9, 0x47, 0x3d, 0xbd, 0x94, 0x7a, 0x5b, 0xfa, 0x34,
-	0xb1, 0x6a, 0x07, 0x68, 0x18, 0x6c, 0xdb, 0x3f, 0xb8, 0x6d, 0xf7, 0xea, 0xc2, 0x6e, 0x7b, 0x9a,
-	0x0e, 0x96, 0x63, 0x12, 0x09, 0xca, 0x99, 0xbe, 0x94, 0x85, 0x9d, 0x9b, 0xdb, 0x2b, 0xef, 0x0e,
-	0x2d, 0xe5, 0xdb, 0xa1, 0xa5, 0xd8, 0xef, 0x55, 0x70, 0xff, 0x3c, 0x65, 0x2e, 0x11, 0x21, 0x67,
-	0x82, 0x68, 0x9b, 0x00, 0xe0, 0x01, 0x62, 0x8c, 0x04, 0xa9, 0x90, 0x4c, 0x66, 0xeb, 0xd6, 0x34,
-	0xb1, 0xd6, 0x66, 0x42, 0x0a, 0x9f, 0xed, 0x56, 0x67, 0x46, 0xdb, 0xd3, 0x1e, 0x80, 0xe5, 0x90,
-	0x47, 0x72, 0xa1, 0x5d, 0x9b, 0x26, 0xd6, 0xf5, 0x1c, 0x99, 0x39, 0x6c, 0xb7, 0x92, 0x7e, 0xb5,
-	0x3d, 0xfb, 0x73, 0x09, 0x54, 0x3b, 0xc2, 0x7f, 0x46, 0x98, 0xb7, 0xb7, 0x7f, 0x39, 0x25, 0x79,
-	0xab, 0x82, 0xd5, 0xbc, 0x33, 0x3d, 0x0f, 0x49, 0x94, 0xd5, 0x65, 0xb5, 0xb9, 0xeb, 0x5c, 0x68,
-	0x3e, 0xe2, 0x86, 0xf3, 0x4b, 0x7d, 0xba, 0x59, 0xb0, 0x5d, 0x24, 0x51, 0xcb, 0x38, 0x4a, 0x2c,
-	0x65, 0x9a, 0x58, 0xda, 0xec, 0x79, 0x8b, 0x34, 0xb6, 0x0b, 0xc2, 0xe2, 0x9e, 0xf6, 0x14, 0xdc,
-	0x8c, 0x48, 0x80, 0x24, 0x8d, 0x49, 0x4f, 0xd2, 0x21, 0xe1, 0x23, 0xa9, 0x97, 0xd7, 0xd5, 0x8d,
-	0x72, 0xeb, 0xee, 0x34, 0xb1, 0x6e, 0xe7, 0xf4, 0xcf, 0x37, 0x6c, 0xf7, 0xc6, 0xfc, 0x68, 0x2f,
-	0x3f, 0x39, 0xd5, 0x44, 0x08, 0xd6, 0x8a, 0xba, 0x15, 0x0d, 0x33, 0xc0, 0x8a, 0x20, 0xaf, 0x47,
-	0x84, 0x61, 0x92, 0x95, 0xb0, 0xec, 0x16, 0x76, 0xf3, 0xa4, 0x04, 0x96, 0x3a, 0xc2, 0xd7, 0xbe,
-	0xa8, 0xe0, 0xce, 0xef, 0x87, 0xb2, 0xeb, 0xfc, 0xf9, 0x6f, 0xe3, 0x9c, 0x37, 0x4c, 0xc6, 0xf3,
-	0xff, 0x1d, 0xb1, 0x78, 0xed, 0x07, 0x15, 0x54, 0x66, 0x83, 0xb3, 0xf3, 0x97, 0x49, 0x72, 0xdc,
-	0x78, 0xf2, 0x4f, 0xf8, 0x5c, 0x50, 0xeb, 0xe5, 0xd1, 0xd8, 0x54, 0x8f, 0xc7, 0xa6, 0x7a, 0x32,
-	0x36, 0xd5, 0x8f, 0x13, 0x53, 0x39, 0x9e, 0x98, 0xca, 0xd7, 0x89, 0xa9, 0xbc, 0xe8, 0xfa, 0x54,
-	0x0e, 0x46, 0x7d, 0x07, 0xf3, 0x21, 0xc4, 0x5c, 0x0c, 0xb9, 0x80, 0xb4, 0x8f, 0xeb, 0x3e, 0x87,
-	0xf1, 0x16, 0x1c, 0x72, 0x6f, 0x14, 0x10, 0x91, 0xae, 0x18, 0x01, 0x9b, 0x5b, 0xf5, 0x45, 0xea,
-	0xfa, 0x59, 0x4b, 0x4e, 0x1e, 0x84, 0x44, 0xf4, 0x2b, 0xd9, 0x96, 0x79, 0xf8, 0x3d, 0x00, 0x00,
-	0xff, 0xff, 0xf0, 0x81, 0x7c, 0xb2, 0x24, 0x05, 0x00, 0x00,
+	// 626 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4f, 0x4f, 0x13, 0x4f,
+	0x18, 0xee, 0xfc, 0x58, 0xca, 0x8f, 0x01, 0x45, 0x37, 0x44, 0xca, 0x46, 0x17, 0x52, 0x3d, 0x20,
+	0x09, 0x3b, 0x69, 0xd5, 0x90, 0xd4, 0x78, 0x10, 0xf0, 0xd0, 0x98, 0x26, 0xcd, 0x8a, 0x09, 0xf1,
+	0xd2, 0x4c, 0x67, 0x27, 0xc3, 0xc8, 0xee, 0xcc, 0xba, 0x33, 0x5d, 0xf1, 0x66, 0xf4, 0x62, 0x3c,
+	0x18, 0x0f, 0x7e, 0x00, 0x3e, 0x02, 0xdf, 0x42, 0x8e, 0x1c, 0x3d, 0x19, 0x03, 0x07, 0x6e, 0x7e,
+	0x06, 0xb3, 0x7f, 0xba, 0x45, 0x41, 0x82, 0x85, 0x5b, 0xdf, 0xf7, 0xed, 0xf3, 0xbc, 0xcf, 0xf3,
+	0xce, 0xbb, 0x2f, 0x7c, 0xc8, 0xbb, 0x04, 0xe1, 0x30, 0xf4, 0x39, 0xc1, 0x9a, 0x4b, 0xa1, 0x10,
+	0x17, 0x9a, 0x46, 0x64, 0x13, 0x73, 0xd1, 0xc1, 0x84, 0xc8, 0x9e, 0xd0, 0x0a, 0x11, 0x29, 0x74,
+	0x24, 0x7d, 0x9f, 0x46, 0x28, 0xae, 0x21, 0xbd, 0xed, 0x84, 0x91, 0xd4, 0xd2, 0xac, 0xf3, 0x2e,
+	0x71, 0x8e, 0x83, 0x9d, 0x53, 0xc0, 0xce, 0x00, 0xec, 0xc4, 0x35, 0x6b, 0x9a, 0x49, 0x26, 0x53,
+	0x38, 0x4a, 0x7e, 0x65, 0x4c, 0xd6, 0xfd, 0x73, 0xc9, 0x88, 0x6b, 0x28, 0xc4, 0x64, 0x8b, 0xea,
+	0x1c, 0xb5, 0x3a, 0x84, 0xf8, 0x63, 0x6a, 0x32, 0x92, 0x19, 0x22, 0x55, 0x20, 0x15, 0x0a, 0x14,
+	0x4b, 0xea, 0x81, 0x62, 0x59, 0xa1, 0xfa, 0x1e, 0xc0, 0x9b, 0x2d, 0xc5, 0x5c, 0xca, 0xb8, 0xd2,
+	0x34, 0x6a, 0x16, 0xd4, 0x8f, 0x33, 0x66, 0x73, 0x1a, 0x8e, 0xca, 0xd7, 0x82, 0x46, 0x15, 0x30,
+	0x0f, 0x16, 0xc6, 0xdd, 0x2c, 0x30, 0x6f, 0xc3, 0x2b, 0x44, 0x0a, 0x41, 0x49, 0xa2, 0xa8, 0xc3,
+	0xbd, 0xca, 0x7f, 0x69, 0x75, 0x72, 0x90, 0x6c, 0x7a, 0x66, 0x05, 0x8e, 0xc5, 0x34, 0x52, 0x5c,
+	0x8a, 0xca, 0x48, 0x5a, 0xee, 0x87, 0x8d, 0xab, 0x1f, 0x76, 0xe6, 0x4a, 0xef, 0x8e, 0x76, 0x17,
+	0x33, 0xba, 0xaa, 0x07, 0xef, 0x9c, 0x25, 0xc2, 0xa5, 0x2a, 0x94, 0x42, 0x51, 0xf3, 0x16, 0x84,
+	0x64, 0x13, 0x0b, 0x41, 0xfd, 0xa4, 0x67, 0xa6, 0x68, 0x3c, 0xcf, 0x34, 0x3d, 0x73, 0x06, 0x8e,
+	0x85, 0x32, 0xd2, 0x03, 0x3d, 0xe5, 0x24, 0x6c, 0x7a, 0x0d, 0x23, 0xe9, 0x57, 0xfd, 0x09, 0xe0,
+	0x78, 0x4b, 0xb1, 0x67, 0x54, 0x78, 0xeb, 0xdb, 0x17, 0x31, 0xb6, 0x05, 0x27, 0xb2, 0x27, 0xea,
+	0x78, 0x58, 0xe3, 0xd4, 0xdc, 0x44, 0x7d, 0xcd, 0x39, 0xd7, 0xa2, 0xc4, 0x35, 0xe7, 0x84, 0xbf,
+	0x76, 0x4a, 0xb6, 0x86, 0x35, 0x5e, 0x31, 0xf6, 0xbe, 0xcf, 0x95, 0x5c, 0x18, 0x16, 0x19, 0xf3,
+	0x2e, 0xbc, 0x16, 0x51, 0x1f, 0x6b, 0x1e, 0xd3, 0x8e, 0xe6, 0x01, 0x95, 0x3d, 0x5d, 0x31, 0xe6,
+	0xc1, 0x82, 0xe1, 0x4e, 0xf5, 0xf3, 0xeb, 0x59, 0xfa, 0xc4, 0x58, 0x1f, 0xc0, 0xeb, 0x85, 0xdf,
+	0x62, 0x86, 0x16, 0xfc, 0x5f, 0xd1, 0x57, 0x3d, 0x2a, 0x08, 0x4d, 0xad, 0x1b, 0x6e, 0x11, 0xe7,
+	0x73, 0xfa, 0x02, 0xe0, 0x54, 0x4b, 0xb1, 0xe7, 0xa1, 0x87, 0x35, 0x6d, 0xe3, 0x08, 0x07, 0xca,
+	0xbc, 0x01, 0xcb, 0x8a, 0xb3, 0xc1, 0xb8, 0xf2, 0xc8, 0xdc, 0x80, 0xe5, 0x30, 0xfd, 0x47, 0x3a,
+	0xa8, 0x89, 0x7a, 0xc3, 0xf9, 0xf7, 0xcf, 0xc5, 0xc9, 0x7a, 0xe4, 0xde, 0x73, 0xbe, 0xc6, 0x54,
+	0xdf, 0x4c, 0xde, 0xaa, 0x3a, 0x0b, 0x67, 0xfe, 0x50, 0xd5, 0xf7, 0x54, 0xff, 0x68, 0xc0, 0x91,
+	0x96, 0x62, 0xe6, 0x57, 0x00, 0x67, 0xff, 0xbe, 0xca, 0xed, 0x61, 0xb4, 0x9d, 0xb5, 0x97, 0xd6,
+	0xc6, 0x65, 0x33, 0x16, 0xaf, 0xf4, 0x09, 0xc0, 0x72, 0xbe, 0xa8, 0x8f, 0x86, 0x6c, 0x92, 0xc1,
+	0xad, 0x27, 0x17, 0x82, 0x17, 0x82, 0x76, 0x00, 0x9c, 0xfc, 0x6d, 0x23, 0x56, 0x87, 0xe4, 0x3d,
+	0x4e, 0x62, 0x3d, 0xbd, 0x04, 0x92, 0xbe, 0x44, 0x6b, 0xf4, 0xed, 0xd1, 0xee, 0x22, 0x58, 0x79,
+	0xb9, 0x77, 0x60, 0x83, 0xfd, 0x03, 0x1b, 0xfc, 0x38, 0xb0, 0xc1, 0xe7, 0x43, 0xbb, 0xb4, 0x7f,
+	0x68, 0x97, 0xbe, 0x1d, 0xda, 0xa5, 0x17, 0x6d, 0xc6, 0xf5, 0x66, 0xaf, 0xeb, 0x10, 0x19, 0xa0,
+	0xfc, 0x20, 0xf2, 0x2e, 0x59, 0x62, 0x12, 0xc5, 0xcb, 0x28, 0x90, 0x5e, 0xcf, 0xa7, 0x2a, 0x39,
+	0xb5, 0x0a, 0xd5, 0x97, 0x97, 0x06, 0x3a, 0x96, 0x4e, 0xbb, 0xb2, 0xfa, 0x4d, 0x48, 0x55, 0xb7,
+	0x9c, 0x5e, 0xd1, 0x7b, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0x34, 0x2d, 0x99, 0xbd, 0x62, 0x06,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -277,6 +343,8 @@ type MsgClient interface {
 	RegisterInterchainAccount(ctx context.Context, in *MsgRegisterInterchainAccount, opts ...grpc.CallOption) (*MsgRegisterInterchainAccountResponse, error)
 	// SendTx defines a rpc handler for MsgSendTx.
 	SendTx(ctx context.Context, in *MsgSendTx, opts ...grpc.CallOption) (*MsgSendTxResponse, error)
+	// UpdateParams defines a rpc handler for MsgUpdateParams.
+	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 }
 
 type msgClient struct {
@@ -305,12 +373,23 @@ func (c *msgClient) SendTx(ctx context.Context, in *MsgSendTx, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error) {
+	out := new(MsgUpdateParamsResponse)
+	err := c.cc.Invoke(ctx, "/ibc.applications.interchain_accounts.controller.v1.Msg/UpdateParams", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// RegisterInterchainAccount defines a rpc handler for MsgRegisterInterchainAccount.
 	RegisterInterchainAccount(context.Context, *MsgRegisterInterchainAccount) (*MsgRegisterInterchainAccountResponse, error)
 	// SendTx defines a rpc handler for MsgSendTx.
 	SendTx(context.Context, *MsgSendTx) (*MsgSendTxResponse, error)
+	// UpdateParams defines a rpc handler for MsgUpdateParams.
+	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -322,6 +401,9 @@ func (*UnimplementedMsgServer) RegisterInterchainAccount(ctx context.Context, re
 }
 func (*UnimplementedMsgServer) SendTx(ctx context.Context, req *MsgSendTx) (*MsgSendTxResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTx not implemented")
+}
+func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -364,6 +446,24 @@ func _Msg_SendTx_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ibc.applications.interchain_accounts.controller.v1.Msg/UpdateParams",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParams(ctx, req.(*MsgUpdateParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ibc.applications.interchain_accounts.controller.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
@@ -375,6 +475,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendTx",
 			Handler:    _Msg_SendTx_Handler,
+		},
+		{
+			MethodName: "UpdateParams",
+			Handler:    _Msg_UpdateParams_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -542,6 +646,69 @@ func (m *MsgSendTxResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgUpdateParams) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateParams) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateParams) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.Params.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Signer)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateParamsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateParamsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateParamsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -622,6 +789,30 @@ func (m *MsgSendTxResponse) Size() (n int) {
 	if m.Sequence != 0 {
 		n += 1 + sovTx(uint64(m.Sequence))
 	}
+	return n
+}
+
+func (m *MsgUpdateParams) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signer)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.Params.Size()
+	n += 1 + l + sovTx(uint64(l))
+	return n
+}
+
+func (m *MsgUpdateParamsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -1105,6 +1296,171 @@ func (m *MsgSendTxResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateParams) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateParams: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateParams: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Params.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateParamsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateParamsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateParamsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

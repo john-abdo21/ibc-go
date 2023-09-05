@@ -145,6 +145,10 @@ module.exports = {
         key: "v4.3.0",
       },
       {
+        label: "v4.4.0",
+        key: "v4.4.0",
+      },
+      {
         label: "v5.0.0",
         key: "v5.0.0",
       },
@@ -157,8 +161,32 @@ module.exports = {
         key: "v5.2.0",
       },
       {
+        label: "v5.3.0",
+        key: "v5.3.0",
+      },
+      {
         label: "v6.1.0",
         key: "v6.1.0",
+      },
+      {
+        label: "v6.2.0",
+        key: "v6.2.0",
+      },
+      {
+        label: "v7.0.0",
+        key: "v7.0.0",
+      },
+      {
+        label: "v7.1.0",
+        key: "v7.1.0",
+      },
+      {
+        label: "v7.2.0",
+        key: "v7.2.0",
+      },
+      {
+        label: "v7.3.0",
+        key: "v7.3.0",
       },
     ],
     topbar: {
@@ -211,6 +239,11 @@ module.exports = {
               path: "/ibc/proto-docs.html",
             },
             {
+              title: "Capability Module",
+              directory: false,
+              path: "/ibc/capability-module.html",
+            },
+            {
               title: "Roadmap",
               directory: false,
               path: "/roadmap/roadmap.html",
@@ -261,6 +294,11 @@ module.exports = {
                   path: "/apps/interchain-accounts/parameters.html",
                 },
                 {
+                  title: "Tx Encoding",
+                  directory: false,
+                  path: "/apps/interchain-accounts/tx-encoding.html",
+                },
+                {
                   title: "Client",
                   directory: false,
                   path: "/apps/interchain-accounts/client.html",
@@ -290,7 +328,7 @@ module.exports = {
                       directory: false,
                       path: "/apps/interchain-accounts/legacy/keeper-api.html",
                     },
-                  ]
+                  ],
                 },
               ],
             },
@@ -338,6 +376,11 @@ module.exports = {
                   title: "Authorizations",
                   directory: false,
                   path: "/apps/transfer/authorizations.html",
+                },
+                {
+                  title: "Client",
+                  directory: false,
+                  path: "/apps/transfer/client.html",
                 },
               ],
             },
@@ -396,7 +439,7 @@ module.exports = {
                   directory: false,
                   path: "/ibc/light-clients/setup.html",
                 },
-              ]
+              ],
             },
             {
               title: "Localhost",
@@ -499,6 +542,43 @@ module.exports = {
                 },
               ],
             },
+            {
+              title: "Callbacks Middleware",
+              directory: true,
+              path: "/middleware",
+              children: [
+                {
+                  title: "Overview",
+                  directory: false,
+                  path: "/middleware/callbacks/overview.html",
+                },
+                {
+                  title: "Integration",
+                  directory: false,
+                  path: "/middleware/callbacks/integration.html",
+                },
+                {
+                  title: "Interfaces",
+                  directory: false,
+                  path: "/middleware/callbacks/interfaces.html",
+                },
+                {
+                  title: "Events",
+                  directory: false,
+                  path: "/middleware/callbacks/events.html",
+                },
+                {
+                  title: "End Users",
+                  directory: false,
+                  path: "/middleware/callbacks/end-users.html",
+                },
+                {
+                  title: "Gas Management",
+                  directory: false,
+                  path: "/middleware/callbacks/gas.html",
+                },
+              ],
+            },
           ],
         },
         {
@@ -550,6 +630,11 @@ module.exports = {
               directory: false,
               path: "/migrations/v7-to-v7_1.html",
             },
+            {
+              title: "IBC-Go v7.2 to v7.3",
+              directory: false,
+              path: "/migrations/v7_2-to-v7_3.html",
+            },
           ],
         },
         {
@@ -579,7 +664,7 @@ module.exports = {
     },
     footer: {
       question: {
-        text: "Chat with IBC developers in <a href='https://discord.gg/W8trcGV' target='_blank'>Discord</a>.",
+        text: "Chat with IBC developers in <a href='https://discord.gg/cosmosnetwork' target='_blank'>Discord</a>.",
       },
       textLink: {
         text: "ibcprotocol.dev",
@@ -608,11 +693,11 @@ module.exports = {
         },
         {
           service: "youtube",
-          url: "https://www.youtube.com/c/CosmosProject",
+          url: "https://www.youtube.com/@interchain_io/featured",
         },
       ],
       smallprint:
-        "The development of IBC-Go is led primarily by [Interchain GmbH](https://interchain.berlin/). Funding for this development comes primarily from the Interchain Foundation, a Swiss non-profit.",
+        "The development of IBC-Go is led primarily by Interchain GmbH. Funding for this development comes primarily from the [Interchain Foundation](https://interchain.io/), a Swiss non-profit.",
       links: [
         {
           title: "Documentation",
@@ -626,7 +711,11 @@ module.exports = {
               url: "https://hub.cosmos.network",
             },
             {
-              title: "Tendermint Core",
+              title: "CometBFT",
+              url: "https://docs.cometbft.com/",
+            },
+            {
+              title: "Tendermint Core (archived)",
               url: "https://docs.tendermint.com",
             },
           ],
@@ -644,7 +733,7 @@ module.exports = {
             },
             {
               title: "Chat",
-              url: "https://discord.gg/W8trcGV",
+              url: "https://discord.gg/cosmosnetwork",
             },
           ],
         },

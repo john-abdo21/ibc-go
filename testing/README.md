@@ -120,7 +120,17 @@ The testing package requires that you provide a function to initialize your Test
 func SetupTestingApp() (TestingApp, map[string]json.RawMessage) {
   db := dbm.NewMemDB()
   encCdc := simapp.MakeTestEncodingConfig()
-  app := simapp.NewSimApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, simapp.DefaultNodeHome, 5, encCdc, simapp.EmptyAppOptions{})
+  app := simapp.NewSimApp(
+    log.NewNopLogger(), 
+    db, 
+    nil, 
+    true,
+    map[int64]bool{},
+    simapp.DefaultNodeHome,
+    5,
+    encCdc, 
+    simapp.EmptyAppOptions{},
+  )
   return app, simapp.NewDefaultGenesisState(encCdc.Marshaler)
 }
 ```
@@ -131,9 +141,8 @@ Change the value of `DefaultTestingAppInit` to use your function:
 
 ```go
 func init() {
-  ibctesting.DefaultTestingAppInit = MySetupTestingAppFunction
+  ibctesting.DefaultTestingAppInit = SetupTestingApp
 }
-
 ```
 
 ## Example
@@ -143,7 +152,7 @@ Here is an example of how to setup your testing environment in every package you
 ```go
 // KeeperTestSuite is a testing suite to test keeper functions.
 type KeeperTestSuite struct {
-  suite.Suite
+  testifysuite.Suite
 
   coordinator *ibctesting.Coordinator
 
@@ -154,7 +163,7 @@ type KeeperTestSuite struct {
 
 // TestKeeperTestSuite runs all the tests within this package.
 func TestKeeperTestSuite(t *testing.T) {
-  suite.Run(t, new(KeeperTestSuite))
+  testifysuite.Run(t, new(KeeperTestSuite))
 }
 
 // SetupTest creates a coordinator with 2 test chains.
@@ -203,7 +212,7 @@ func NewTransferPath(chainA, chainB *ibctesting.TestChain) *ibctesting.Path {
   path.EndpointA.ChannelConfig.PortID = ibctesting.TransferPort
   path.EndpointB.ChannelConfig.PortID = ibctesting.TransferPort
 
-  return pa``th
+  return path
 }
 
 ```
@@ -242,7 +251,7 @@ Here is a basic example of the testing package being used to simulate IBC functi
 
   packet2 := NewPacket()
 
-  path.Relay(packet2, expectedAck)
+  path.RelayPacket(packet2)
 
   // if needed we can update our clients
   path.EndpointB.UpdateClient()    
@@ -268,7 +277,17 @@ import (
 func SetupTransferTestingApp() (ibctesting.TestingApp, map[string]json.RawMessage) {
   db := dbm.NewMemDB()
   encCdc := simapp.MakeTestEncodingConfig()
-  app := simapp.NewSimApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, simapp.DefaultNodeHome, 5, encCdc, simapp.EmptyAppOptions{})
+  app := simapp.NewSimApp(
+    log.NewNopLogger(),
+    db,
+    nil,
+    true,
+    map[int64]bool{},
+    simapp.DefaultNodeHome,
+    5,
+    encCdc,
+    simapp.EmptyAppOptions{},
+  )
   return app, simapp.NewDefaultGenesisState(encCdc.Marshaler)
 }
 

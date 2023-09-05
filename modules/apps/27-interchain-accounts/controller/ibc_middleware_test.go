@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
-	"github.com/stretchr/testify/suite"
+	testifysuite "github.com/stretchr/testify/suite"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	"github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller"
 	controllerkeeper "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/keeper"
 	"github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/types"
 	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
-	fee "github.com/cosmos/ibc-go/v7/modules/apps/29-fee"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	porttypes "github.com/cosmos/ibc-go/v7/modules/core/05-port/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	ibctesting "github.com/cosmos/ibc-go/v7/testing"
 )
@@ -37,7 +38,7 @@ var (
 )
 
 type InterchainAccountsTestSuite struct {
-	suite.Suite
+	testifysuite.Suite
 
 	coordinator *ibctesting.Coordinator
 
@@ -48,7 +49,7 @@ type InterchainAccountsTestSuite struct {
 }
 
 func TestICATestSuite(t *testing.T) {
-	suite.Run(t, new(InterchainAccountsTestSuite))
+	testifysuite.Run(t, new(InterchainAccountsTestSuite))
 }
 
 func (suite *InterchainAccountsTestSuite) SetupTest() {
@@ -107,11 +108,7 @@ func SetupICAPath(path *ibctesting.Path, owner string) error {
 		return err
 	}
 
-	if err := path.EndpointB.ChanOpenConfirm(); err != nil {
-		return err
-	}
-
-	return nil
+	return path.EndpointB.ChanOpenConfirm()
 }
 
 func (suite *InterchainAccountsTestSuite) TestOnChanOpenInit() {
@@ -839,7 +836,7 @@ func (suite *InterchainAccountsTestSuite) TestGetAppVersion() {
 	cbs, ok := suite.chainA.App.GetIBCKeeper().Router.GetRoute(module)
 	suite.Require().True(ok)
 
-	controllerStack := cbs.(fee.IBCMiddleware)
+	controllerStack := cbs.(porttypes.ICS4Wrapper)
 	appVersion, found := controllerStack.GetAppVersion(suite.chainA.GetContext(), path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
 	suite.Require().True(found)
 	suite.Require().Equal(path.EndpointA.ChannelConfig.Version, appVersion)
@@ -920,4 +917,27 @@ func (suite *InterchainAccountsTestSuite) TestClosedChannelReopensWithMsgServer(
 
 	err = path.EndpointB.ChanOpenConfirm()
 	suite.Require().NoError(err)
+}
+
+func (suite *InterchainAccountsTestSuite) TestPacketDataUnmarshalerInterface() {
+	path := NewICAPath(suite.chainA, suite.chainB)
+	suite.coordinator.SetupConnections(path)
+	err := SetupICAPath(path, TestOwnerAddress)
+	suite.Require().NoError(err)
+
+	expPacketData := icatypes.InterchainAccountPacketData{
+		Type: icatypes.EXECUTE_TX,
+		Data: []byte("data"),
+		Memo: "",
+	}
+
+	packetData, err := controller.IBCMiddleware{}.UnmarshalPacketData(expPacketData.GetBytes())
+	suite.Require().NoError(err)
+	suite.Require().Equal(expPacketData, packetData)
+
+	// test invalid packet data
+	invalidPacketData := []byte("invalid packet data")
+	packetData, err = controller.IBCMiddleware{}.UnmarshalPacketData(invalidPacketData)
+	suite.Require().Error(err)
+	suite.Require().Nil(packetData)
 }

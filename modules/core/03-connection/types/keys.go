@@ -28,9 +28,9 @@ const (
 
 	// ConnectionPrefix is the prefix used when creating a connection identifier
 	ConnectionPrefix = "connection-"
-
 	// ExistingConnectionIDKeyPrefix is the key prefix for the generated connectionID key
 	ExistingConnectionIDKeyPrefix = "existingConnectionID"
+
 )
 
 // FormatConnectionIdentifier returns the connection identifier with the sequence appended.

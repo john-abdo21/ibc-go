@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
-	tmbytes "github.com/cometbft/cometbft/libs/bytes"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	tmtypes "github.com/cometbft/cometbft/types"
+	testifysuite "github.com/stretchr/testify/suite"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/suite"
+
+	tmbytes "github.com/cometbft/cometbft/libs/bytes"
+	tmtypes "github.com/cometbft/cometbft/types"
 
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
@@ -35,7 +36,7 @@ var (
 )
 
 type TendermintTestSuite struct {
-	suite.Suite
+	testifysuite.Suite
 
 	coordinator *ibctesting.Coordinator
 
@@ -66,7 +67,7 @@ func (suite *TendermintTestSuite) SetupTest() {
 
 	// TODO: deprecate usage in favor of testing package
 	checkTx := false
-	app := simapp.Setup(checkTx)
+	app := simapp.Setup(suite.T(), checkTx)
 
 	suite.cdc = app.AppCodec()
 
@@ -90,7 +91,7 @@ func (suite *TendermintTestSuite) SetupTest() {
 	suite.valSet = tmtypes.NewValidatorSet([]*tmtypes.Validator{val})
 	suite.valsHash = suite.valSet.Hash()
 	suite.header = suite.chainA.CreateTMClientHeader(chainID, int64(height.RevisionHeight), heightMinus1, suite.now, suite.valSet, suite.valSet, suite.valSet, suite.signers)
-	suite.ctx = app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 1, Time: suite.now})
+	suite.ctx = app.BaseApp.NewContext(checkTx)
 }
 
 func getAltSigners(altVal *tmtypes.Validator, altPrivVal tmtypes.PrivValidator) map[string]tmtypes.PrivValidator {
@@ -110,5 +111,5 @@ func getBothSigners(suite *TendermintTestSuite, altVal *tmtypes.Validator, altPr
 }
 
 func TestTendermintTestSuite(t *testing.T) {
-	suite.Run(t, new(TendermintTestSuite))
+	testifysuite.Run(t, new(TendermintTestSuite))
 }

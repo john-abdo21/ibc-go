@@ -3,11 +3,13 @@ package ica_test
 import (
 	"testing"
 
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
+	testifysuite "github.com/stretchr/testify/suite"
+
+	"cosmossdk.io/log"
+
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
-	"github.com/stretchr/testify/suite"
 
 	ica "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts"
 	controllertypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/types"
@@ -18,13 +20,13 @@ import (
 )
 
 type InterchainAccountsTestSuite struct {
-	suite.Suite
+	testifysuite.Suite
 
 	coordinator *ibctesting.Coordinator
 }
 
 func TestICATestSuite(t *testing.T) {
-	suite.Run(t, new(InterchainAccountsTestSuite))
+	testifysuite.Run(t, new(InterchainAccountsTestSuite))
 }
 
 func (suite *InterchainAccountsTestSuite) SetupTest() {
@@ -33,17 +35,12 @@ func (suite *InterchainAccountsTestSuite) SetupTest() {
 
 func (suite *InterchainAccountsTestSuite) TestInitModule() {
 	// setup and basic testing
-	app := simapp.NewSimApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, map[int64]bool{}, simapp.DefaultNodeHome, 5, simapp.MakeTestEncodingConfig(), simtestutil.EmptyAppOptions{})
-	appModule, ok := app.GetModuleManager().Modules[types.ModuleName].(ica.AppModule)
+	chainID := "testchain"
+	app := simapp.NewSimApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.EmptyAppOptions{}, baseapp.SetChainID(chainID))
+	appModule, ok := app.ModuleManager.Modules[types.ModuleName].(ica.AppModule)
 	suite.Require().True(ok)
 
-	header := tmproto.Header{
-		ChainID: "testchain",
-		Height:  1,
-		Time:    suite.coordinator.CurrentTime.UTC(),
-	}
-
-	ctx := app.GetBaseApp().NewContext(true, header)
+	ctx := app.GetBaseApp().NewContext(true)
 
 	// ensure params are not set
 	suite.Require().Panics(func() {
@@ -71,7 +68,7 @@ func (suite *InterchainAccountsTestSuite) TestInitModule() {
 		{
 			"both controller and host set", func() {
 				var ok bool
-				appModule, ok = app.GetModuleManager().Modules[types.ModuleName].(ica.AppModule)
+				appModule, ok = app.ModuleManager.Modules[types.ModuleName].(ica.AppModule)
 				suite.Require().True(ok)
 			}, true, true,
 		},
@@ -99,14 +96,10 @@ func (suite *InterchainAccountsTestSuite) TestInitModule() {
 			suite.SetupTest() // reset
 
 			// reset app state
-			app = simapp.NewSimApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, map[int64]bool{}, simapp.DefaultNodeHome, 5, simapp.MakeTestEncodingConfig(), simtestutil.EmptyAppOptions{})
-			header := tmproto.Header{
-				ChainID: "testchain",
-				Height:  1,
-				Time:    suite.coordinator.CurrentTime.UTC(),
-			}
+			chainID := "testchain"
+			app = simapp.NewSimApp(log.NewNopLogger(), dbm.NewMemDB(), nil, true, simtestutil.EmptyAppOptions{}, baseapp.SetChainID(chainID))
 
-			ctx := app.GetBaseApp().NewContext(true, header)
+			ctx := app.GetBaseApp().NewContext(true)
 
 			tc.malleate()
 

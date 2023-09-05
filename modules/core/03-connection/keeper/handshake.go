@@ -2,13 +2,14 @@ package keeper
 
 import (
 	errorsmod "cosmossdk.io/errors"
+
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	ibcerrors "github.com/cosmos/ibc-go/v7/internal/errors"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	commitmenttypes "github.com/cosmos/ibc-go/v7/modules/core/23-commitment/types"
+	ibcerrors "github.com/cosmos/ibc-go/v7/modules/core/errors"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 )
 
@@ -30,7 +31,7 @@ func (k Keeper) ConnOpenInit(
 			return "", errorsmod.Wrap(types.ErrInvalidVersion, "version is not supported")
 		}
 
-		versions = []exported.Version{version}
+		versions = []*types.Version{version}
 	}
 
 	clientState, found := k.clientKeeper.GetClientState(ctx, clientID)
@@ -48,14 +49,12 @@ func (k Keeper) ConnOpenInit(
 	}
 
 	// connection defines chain A's ConnectionEnd
-	connection := types.NewConnectionEnd(types.INIT, clientID, counterparty, types.ExportedVersionsToProto(versions), delayPeriod)
+	connection := types.NewConnectionEnd(types.INIT, clientID, counterparty, versions, delayPeriod)
 	k.SetConnection(ctx, connectionID, connection)
 
-	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", "NONE", "new-state", "INIT")
+	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.UNINITIALIZED.String(), "new-state", types.INIT.String())
 
-	defer func() {
-		telemetry.IncrCounter(1, "ibc", "connection", "open-init")
-	}()
+	defer telemetry.IncrCounter(1, "ibc", "connection", "open-init")
 
 	emitConnectionOpenInitEvent(ctx, connectionID, clientID, counterparty)
 
@@ -74,7 +73,7 @@ func (k Keeper) ConnOpenTry(
 	delayPeriod uint64,
 	clientID string, // clientID of chainA
 	clientState exported.ClientState, // clientState that chainA has for chainB
-	counterpartyVersions []exported.Version, // supported versions of chain A
+	counterpartyVersions []*types.Version, // supported versions of chain A
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
 	proofClient []byte, // proof that chainA stored a light client of chainB
 	proofConsensus []byte, // proof that chainA stored chainB's consensus state at consensus height
@@ -115,7 +114,7 @@ func (k Keeper) ConnOpenTry(
 	// NOTE: chainA and chainB must have the same delay period
 	prefix := k.GetCommitmentPrefix()
 	expectedCounterparty := types.NewCounterparty(clientID, "", commitmenttypes.NewMerklePrefix(prefix.Bytes()))
-	expectedConnection := types.NewConnectionEnd(types.INIT, counterparty.ClientId, expectedCounterparty, types.ExportedVersionsToProto(counterpartyVersions), delayPeriod)
+	expectedConnection := types.NewConnectionEnd(types.INIT, counterparty.ClientId, expectedCounterparty, counterpartyVersions, delayPeriod)
 
 	// chain B picks a version from Chain A's available versions that is compatible
 	// with Chain B's supported IBC versions. PickVersion will select the intersection
@@ -154,7 +153,8 @@ func (k Keeper) ConnOpenTry(
 	}
 
 	k.SetConnection(ctx, connectionID, connection)
-	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", "NONE", "new-state", "TRYOPEN")
+	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.UNINITIALIZED.String(), "new-state", types.TRYOPEN.String())
+
 
 	// set existingConnectionID for the given counterparty so that future TRY attempts for the same handshake fail
 	k.SetExistingConnectionID(ctx, clientID, counterparty.ConnectionId, connectionID)
@@ -162,6 +162,7 @@ func (k Keeper) ConnOpenTry(
 	defer func() {
 		telemetry.IncrCounter(1, "ibc", "connection", "open-try")
 	}()
+
 
 	emitConnectionOpenTryEvent(ctx, connectionID, clientID, counterparty)
 
@@ -209,7 +210,7 @@ func (k Keeper) ConnOpenAck(
 	}
 
 	// ensure selected version is supported
-	if !types.IsSupportedVersion(types.ProtoVersionsToExported(connection.Versions), version) {
+	if !types.IsSupportedVersion(connection.Versions, version) {
 		return errorsmod.Wrapf(
 			types.ErrInvalidConnectionState,
 			"the counterparty selected version %s is not supported by versions selected on INIT", version,
@@ -251,11 +252,9 @@ func (k Keeper) ConnOpenAck(
 		return err
 	}
 
-	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", "INIT", "new-state", "OPEN")
+	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.INIT.String(), "new-state", types.OPEN.String())
 
-	defer func() {
-		telemetry.IncrCounter(1, "ibc", "connection", "open-ack")
-	}()
+	defer telemetry.IncrCounter(1, "ibc", "connection", "open-ack")
 
 	// Update connection state to Open
 	connection.State = types.OPEN
@@ -311,11 +310,9 @@ func (k Keeper) ConnOpenConfirm(
 	// Update ChainB's connection to Open
 	connection.State = types.OPEN
 	k.SetConnection(ctx, connectionID, connection)
-	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", "TRYOPEN", "new-state", "OPEN")
+	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.TRYOPEN.String(), "new-state", types.OPEN.String())
 
-	defer func() {
-		telemetry.IncrCounter(1, "ibc", "connection", "open-confirm")
-	}()
+	defer telemetry.IncrCounter(1, "ibc", "connection", "open-confirm")
 
 	// delete existingConnectionID mapping now that handshake attempt is successful
 	// we no longer need to store it for redundancy protection

@@ -50,7 +50,7 @@ type MsgRegisterCounterpartyPayee struct {
 >
 > - `PortId` is invalid (see [24-host naming requirements](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#paths-identifiers-separators).
 > - `ChannelId` is invalid (see [24-host naming requirements](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#paths-identifiers-separators)).
-> - `Relayer` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/basics/03-accounts.md#addresses)).
+> - `Relayer` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/develop/beginner/03-accounts.md#addresses)).
 > - `CounterpartyPayee` is empty.
 
 See below for an example CLI command:
@@ -76,7 +76,7 @@ If a payee is not registered for the reverse or timeout relayer on the source ch
 A transaction must be submitted **to the source chain** including a `Payee` address of an account on the source chain.
 The transaction must be signed by the `Relayer`.
 
-Note: If a module account address is used as the `Payee` it is recommended to [turn off invariant checks](https://github.com/cosmos/ibc-go/blob/71d7480c923f4227453e8a80f51be01ae7ee845e/testing/simapp/app.go#L659) for that module.
+Note: If a module account address is used as the `Payee` it is recommended to [turn off invariant checks](https://github.com/cosmos/ibc-go/blob/v7.0.0/testing/simapp/app.go#L727) for that module.
 
 ```go
 type MsgRegisterPayee struct {
@@ -95,8 +95,8 @@ type MsgRegisterPayee struct {
 >
 > - `PortId` is invalid (see [24-host naming requirements](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#paths-identifiers-separators).
 > - `ChannelId` is invalid (see [24-host naming requirements](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#paths-identifiers-separators)).
-> - `Relayer` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/basics/03-accounts.md#addresses)).
-> - `Payee` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/basics/03-accounts.md#addresses)).
+> - `Relayer` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/develop/beginner/03-accounts.md#addresses)).
+> - `Payee` is an invalid address (see [Cosmos SDK Addresses](https://github.com/cosmos/cosmos-sdk/blob/main/docs/docs/develop/beginner/03-accounts.md#addresses)).
 
 See below for an example CLI command:
 

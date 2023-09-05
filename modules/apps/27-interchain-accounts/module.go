@@ -5,15 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/spf13/cobra"
+
+	"cosmossdk.io/core/appmodule"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/client/cli"
 	controllerkeeper "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/keeper"
@@ -29,11 +33,12 @@ import (
 )
 
 var (
-	_ module.AppModule           = AppModule{}
-	_ module.AppModuleBasic      = AppModuleBasic{}
-	_ module.AppModuleSimulation = AppModule{}
+	_ module.AppModule           = (*AppModule)(nil)
+	_ module.AppModuleBasic      = (*AppModuleBasic)(nil)
+	_ module.AppModuleSimulation = (*AppModule)(nil)
+	_ appmodule.AppModule        = (*AppModule)(nil)
 
-	_ porttypes.IBCModule = host.IBCModule{}
+	_ porttypes.IBCModule = (*host.IBCModule)(nil)
 )
 
 // AppModuleBasic is the IBC interchain accounts AppModuleBasic
@@ -44,12 +49,19 @@ func (AppModuleBasic) Name() string {
 	return types.ModuleName
 }
 
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (AppModule) IsAppModule() {}
+
 // RegisterLegacyAminoCodec implements AppModuleBasic.
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
 
 // RegisterInterfaces registers module concrete types into protobuf Any
 func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	controllertypes.RegisterInterfaces(registry)
+	hosttypes.RegisterInterfaces(registry)
 	types.RegisterInterfaces(registry)
 }
 
@@ -107,7 +119,7 @@ func NewAppModule(controllerKeeper *controllerkeeper.Keeper, hostKeeper *hostkee
 	}
 }
 
-// InitModule will initialize the interchain accounts moudule. It should only be
+// InitModule will initialize the interchain accounts module. It should only be
 // called once and as an alternative to InitGenesis.
 func (am AppModule) InitModule(ctx sdk.Context, controllerParams controllertypes.Params, hostParams hosttypes.Params) {
 	if am.controllerKeeper != nil {
@@ -115,10 +127,13 @@ func (am AppModule) InitModule(ctx sdk.Context, controllerParams controllertypes
 	}
 
 	if am.hostKeeper != nil {
+		if err := hostParams.Validate(); err != nil {
+			panic(fmt.Sprintf("could not set ica host params at initialization: %v", err))
+		}
 		am.hostKeeper.SetParams(ctx, hostParams)
 
-		cap := am.hostKeeper.BindPort(ctx, types.HostPortID)
-		if err := am.hostKeeper.ClaimCapability(ctx, cap, ibchost.PortPath(types.HostPortID)); err != nil {
+		capability := am.hostKeeper.BindPort(ctx, types.HostPortID)
+		if err := am.hostKeeper.ClaimCapability(ctx, capability, ibchost.PortPath(types.HostPortID)); err != nil {
 			panic(fmt.Sprintf("could not claim port capability: %v", err))
 		}
 	}
@@ -136,12 +151,23 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 
 	if am.hostKeeper != nil {
+		hosttypes.RegisterMsgServer(cfg.MsgServer(), hostkeeper.NewMsgServerImpl(am.hostKeeper))
 		hosttypes.RegisterQueryServer(cfg.QueryServer(), am.hostKeeper)
 	}
 
-	m := controllerkeeper.NewMigrator(am.controllerKeeper)
-	if err := cfg.RegisterMigration(types.ModuleName, 1, m.AssertChannelCapabilityMigrations); err != nil {
-		panic(fmt.Sprintf("failed to migrate interchainaccounts app from version 1 to 2: %v", err))
+	controllerMigrator := controllerkeeper.NewMigrator(am.controllerKeeper)
+	if err := cfg.RegisterMigration(types.ModuleName, 1, controllerMigrator.AssertChannelCapabilityMigrations); err != nil {
+		panic(fmt.Sprintf("failed to migrate interchainaccounts app from version 1 to 2 (channel capabilities owned by controller submodule check): %v", err))
+	}
+
+	hostMigrator := hostkeeper.NewMigrator(am.hostKeeper)
+	if err := cfg.RegisterMigration(types.ModuleName, 2, func(ctx sdk.Context) error {
+		if err := hostMigrator.MigrateParams(ctx); err != nil {
+			return err
+		}
+		return controllerMigrator.MigrateParams(ctx)
+	}); err != nil {
+		panic(fmt.Sprintf("failed to migrate interchainaccounts app from version 2 to 3 (self-managed params migration): %v", err))
 	}
 }
 
@@ -183,16 +209,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
-func (AppModule) ConsensusVersion() uint64 { return 2 }
-
-// BeginBlock implements the AppModule interface
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-}
-
-// EndBlock implements the AppModule interface
-func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
-}
+func (AppModule) ConsensusVersion() uint64 { return 3 }
 
 // AppModuleSimulation functions
 
@@ -202,11 +219,11 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 }
 
 // WeightedOperations is unimplemented.
-func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
+func (AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }
 
 // RegisterStoreDecoder registers a decoder for interchain accounts module's types
-func (am AppModule) RegisterStoreDecoder(sdr sdk.StoreDecoderRegistry) {
+func (AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simulation.NewDecodeStore()
 }
