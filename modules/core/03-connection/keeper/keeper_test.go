@@ -60,6 +60,19 @@ func (suite *KeeperTestSuite) TestSetAndGetClientConnectionPaths() {
 	suite.EqualValues(connections, paths)
 }
 
+func (suite *KeeperTestSuite) TestSetGetAndDeleteExistingConnectionID() {
+	connID := suite.chainA.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(suite.chainA.GetContext(), "client-0", "connection-1")
+	suite.Require().Empty(connID, "connectionID is not empty before set")
+
+	suite.chainA.App.GetIBCKeeper().ConnectionKeeper.SetExistingConnectionID(suite.chainA.GetContext(), "client-0", "connection-1", "connection-3")
+	connID = suite.chainA.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(suite.chainA.GetContext(), "client-0", "connection-1")
+	suite.Require().Equal("connection-3", connID, "connectionID is not same as set value")
+
+	suite.chainA.App.GetIBCKeeper().ConnectionKeeper.DeleteExistingConnectionID(suite.chainA.GetContext(), "client-0", "connection-1")
+	connID = suite.chainA.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(suite.chainA.GetContext(), "client-0", "connection-1")
+	suite.Require().Empty(connID, "connectionID is not empty after delete")
+}
+
 // create 2 connections: A0 - B0, A1 - B1
 func (suite KeeperTestSuite) TestGetAllConnections() { //nolint:govet // this is a test, we are okay with copying locks
 	path1 := ibctesting.NewPath(suite.chainA, suite.chainB)

@@ -132,6 +132,19 @@ func (suite *KeeperTestSuite) TestConnOpenTry() {
 			// retrieve client state of chainA to pass as counterpartyClient
 			counterpartyClient = suite.chainA.GetClientState(path.EndpointA.ClientID)
 		}, true},
+		{"previous TRY already successful", func() {
+			err := path.EndpointA.ConnOpenInit()
+			suite.Require().NoError(err)
+
+			err = path.EndpointB.ConnOpenTry()
+			suite.Require().NoError(err)
+
+			// remove suite storage of generated connectionID to prove error is coming from state machine
+			path.EndpointB.ConnectionID = ""
+
+			// retrieve client state of chainA to pass as counterpartyClient
+			counterpartyClient = suite.chainA.GetClientState(path.EndpointA.ClientID)
+		}, false},
 		{"invalid counterparty client", func() {
 			err := path.EndpointA.ConnOpenInit()
 			suite.Require().NoError(err)
@@ -262,6 +275,11 @@ func (suite *KeeperTestSuite) TestConnOpenTry() {
 			if tc.expPass {
 				suite.Require().NoError(err)
 				suite.Require().Equal(types.FormatConnectionIdentifier(0), connectionID)
+
+				existingID := suite.chainB.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(
+					suite.chainB.GetContext(), path.EndpointB.ClientID, path.EndpointA.ConnectionID,
+				)
+				suite.Require().Equal(connectionID, existingID, "connectionID generated in ConnOpenTry was not stored in existingConnectionID mapping")
 			} else {
 				suite.Require().Error(err)
 				suite.Require().Equal("", connectionID)
@@ -512,6 +530,11 @@ func (suite *KeeperTestSuite) TestConnOpenAck() {
 
 			if tc.expPass {
 				suite.Require().NoError(err)
+
+				existingID := suite.chainA.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(
+					suite.chainA.GetContext(), path.EndpointA.ClientID, path.EndpointB.ConnectionID,
+				)
+				suite.Require().Empty(existingID, "existingConnectionID mapping not deleted after handshake complete")
 			} else {
 				suite.Require().Error(err)
 			}
@@ -578,6 +601,11 @@ func (suite *KeeperTestSuite) TestConnOpenConfirm() {
 
 			if tc.expPass {
 				suite.Require().NoError(err)
+
+				existingID := suite.chainB.App.GetIBCKeeper().ConnectionKeeper.GetExistingConnectionID(
+					suite.chainB.GetContext(), path.EndpointB.ClientID, path.EndpointA.ConnectionID,
+				)
+				suite.Require().Empty(existingID, "existingConnectionID mapping not deleted after handshake complete")
 			} else {
 				suite.Require().Error(err)
 			}

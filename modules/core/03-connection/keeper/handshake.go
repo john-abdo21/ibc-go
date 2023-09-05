@@ -80,6 +80,12 @@ func (k Keeper) ConnOpenTry(
 	proofHeight exported.Height, // height at which relayer constructs proof of A storing connectionEnd in state
 	consensusHeight exported.Height, // latest height of chain B which chain A has stored in its chain B client
 ) (string, error) {
+	// verify that this is the first attempt to establish a connection with the proposed counterparty
+	// if a previous attempt was successful then abort this transaction and return the generated connectionID of this chain in the error
+	if connectionID := k.GetExistingConnectionID(ctx, clientID, counterparty.ConnectionId); connectionID != "" {
+		return "", errorsmod.Wrapf(types.ErrRedundantHandshake, "connectionID: %s was already established for the given counterparty", connectionID)
+	}
+
 	// generate a new connection
 	connectionID := k.GenerateConnectionIdentifier(ctx)
 
@@ -149,7 +155,14 @@ func (k Keeper) ConnOpenTry(
 	k.SetConnection(ctx, connectionID, connection)
 	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.UNINITIALIZED.String(), "new-state", types.TRYOPEN.String())
 
-	defer telemetry.IncrCounter(1, "ibc", "connection", "open-try")
+
+	// set existingConnectionID for the given counterparty so that future TRY attempts for the same handshake fail
+	k.SetExistingConnectionID(ctx, clientID, counterparty.ConnectionId, connectionID)
+
+	defer func() {
+		telemetry.IncrCounter(1, "ibc", "connection", "open-try")
+	}()
+
 
 	emitConnectionOpenTryEvent(ctx, connectionID, clientID, counterparty)
 
@@ -249,6 +262,10 @@ func (k Keeper) ConnOpenAck(
 	connection.Counterparty.ConnectionId = counterpartyConnectionID
 	k.SetConnection(ctx, connectionID, connection)
 
+	// delete existingConnectionID mapping now that handshake attempt is successful
+	// we no longer need to store it for redundancy protection
+	k.DeleteExistingConnectionID(ctx, connection.ClientId, counterpartyConnectionID)
+
 	emitConnectionOpenAckEvent(ctx, connectionID, connection)
 
 	return nil
@@ -296,6 +313,10 @@ func (k Keeper) ConnOpenConfirm(
 	k.Logger(ctx).Info("connection state updated", "connection-id", connectionID, "previous-state", types.TRYOPEN.String(), "new-state", types.OPEN.String())
 
 	defer telemetry.IncrCounter(1, "ibc", "connection", "open-confirm")
+
+	// delete existingConnectionID mapping now that handshake attempt is successful
+	// we no longer need to store it for redundancy protection
+	k.DeleteExistingConnectionID(ctx, connection.ClientId, connection.Counterparty.ConnectionId)
 
 	emitConnectionOpenConfirmEvent(ctx, connectionID, connection)
 

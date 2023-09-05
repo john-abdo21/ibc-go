@@ -28,9 +28,9 @@ const (
 
 	// ConnectionPrefix is the prefix used when creating a connection identifier
 	ConnectionPrefix = "connection-"
+	// ExistingConnectionIDKeyPrefix is the key prefix for the generated connectionID key
+	ExistingConnectionIDKeyPrefix = "existingConnectionID"
 
-	// ParamsKey is the store key for the IBC connection parameters
-	ParamsKey = "connectionParams"
 )
 
 // FormatConnectionIdentifier returns the connection identifier with the sequence appended.
@@ -62,4 +62,8 @@ func ParseConnectionSequence(connectionID string) (uint64, error) {
 	}
 
 	return sequence, nil
+}
+
+func ExistingConnectionIDKey(clientID, counterpartyConnectionID string) string {
+	return fmt.Sprintf("%s/%s/%s", ExistingConnectionIDKeyPrefix, clientID, counterpartyConnectionID)
 }

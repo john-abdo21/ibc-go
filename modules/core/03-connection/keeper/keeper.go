@@ -149,6 +149,26 @@ func (k Keeper) SetNextConnectionSequence(ctx sdk.Context, sequence uint64) {
 	store.Set([]byte(types.KeyNextConnectionSequence), bz)
 }
 
+// SetExistingConnectionID sets the generated connectionID from the first successful ConnOpenTry from
+// a given clientID and counterparty connectionID. This prevents multiple ConnOpenTrys from
+// succeeding for the same INIT attempt.
+func (k Keeper) SetExistingConnectionID(ctx sdk.Context, clientID, counterpartyConnectionID, connectionID string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(types.ExistingConnectionIDKey(clientID, counterpartyConnectionID)), []byte(connectionID))
+}
+
+// GetExistingConnectionID returns the generated connectionID for a given clientID and counterparty connectionID
+func (k Keeper) GetExistingConnectionID(ctx sdk.Context, clientID, counterpartyConnectionID string) string {
+	store := ctx.KVStore(k.storeKey)
+	return string(store.Get([]byte(types.ExistingConnectionIDKey(clientID, counterpartyConnectionID))))
+}
+
+// DeleteExistingConnectionID removes the ExistingConnectionID mapping from the store
+func (k Keeper) DeleteExistingConnectionID(ctx sdk.Context, clientID, counterpartyConnectionID string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(types.ExistingConnectionIDKey(clientID, counterpartyConnectionID)))
+}
+
 // GetAllClientConnectionPaths returns all stored clients connection id paths. It
 // will ignore the clients that haven't initialized a connection handshake since
 // no paths are stored.
