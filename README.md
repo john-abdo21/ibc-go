@@ -1,9 +1,7 @@
 <div align="center">
   <h1>ibc-go</h1>
 </div>
-
 ![banner](docs/ibc-go-image.png)
-
 <div align="center">
   <a href="https://github.com/cosmos/ibc-go/releases/latest">
     <img alt="Version" src="https://img.shields.io/github/tag/cosmos/ibc-go.svg" />
@@ -138,3 +136,5 @@ The following audits have been performed on the `ibc-go` source code:
 - [IBC Protocol Specification](https://github.com/cosmos/ibc)
 - [Documentation](https://ibc.cosmos.network/main/ibc/overview.html)
 - [Interchain Developer Academy](https://tutorials.cosmos.network/academy/3-ibc/)
+
+- best
