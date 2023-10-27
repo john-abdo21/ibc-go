@@ -11,7 +11,7 @@ require (
 	github.com/cosmos/gogoproto v1.4.11
 	github.com/cosmos/ibc-go/v7 v7.3.0
 	github.com/cosmos/interchain-accounts v0.5.1
-	github.com/docker/docker v24.0.5+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/strangelove-ventures/interchaintest/v7 v7.0.0-20230817191535-cc35cd35adbc
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0
